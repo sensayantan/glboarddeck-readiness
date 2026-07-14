@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Margin by Business Mix</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #F2F3F6; padding: 2rem; }
+        .container { background: white; border-radius: 12px; padding: 30px; border: 1px solid #F2F3F6; box-shadow: 0 1px 4px rgba(0,0,0,.07); max-width: 1000px; margin: 0 auto; }
+        .header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+        .header-left h2 { font-size: 18px; font-weight: 700; color: #181A24; margin-bottom: 12px; }
+        .header-right { text-align: right; font-size: 11px; color: #6B7280; }
+        .metrics { display: flex; gap: 40px; margin-bottom: 20px; }
+        .metric-item { display: flex; flex-direction: column; gap: 4px; }
+        .metric-label { font-size: 11px; color: #6B7280; }
+        .metric-value { font-size: 18px; font-weight: 700; }
+        .metric-orange { color: #FF5F2D; }
+        .metric-blue { color: #4442E3; }
+        .legend { display: flex; gap: 24px; margin-bottom: 20px; font-size: 12px; }
+        .legend-item { display: flex; align-items: center; gap: 8px; }
+        .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+        .chart-wrapper { position: relative; width: 100%; height: 320px; margin-bottom: 30px; border: 1px solid #E5E7EB; border-radius: 8px; padding: 20px; }
+        .data-section { background: #F9F8F6; padding: 20px; border-radius: 8px; margin-top: 20px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .data-label { font-size: 11px; color: #6B7280; font-weight: 600; }
+        .toggle-btn { background: none; border: none; cursor: pointer; font-size: 18px; color: #4442E3; font-weight: bold; }
+        .toggle-btn:hover { color: #3333c0; }
+        .data-content { transition: all 0.3s ease; }
+        .data-content.hidden { display: none; }
+        .data-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+        .data-table th { background: #E5E7EB; padding: 8px; text-align: left; font-size: 9px; font-weight: 600; color: #181A24; border: 1px solid #D1D5DB; }
+        .data-table td { padding: 8px; border: 1px solid #D1D5DB; font-size: 10px; }
+        .data-table input { width: 100%; padding: 5px; border: 1px solid #E5E7EB; border-radius: 3px; font-size: 10px; }
+        .button-group { display: flex; gap: 10px; margin-top: 16px; }
+        button { padding: 8px 16px; background: #4442E3; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; }
+        button:hover { background: #3333c0; }
+        .reset-btn { background: #6B7280; }
+        .reset-btn:hover { background: #535353; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-top">
+            <div class="header-left">
+                <h2>Margin by Business Mix</h2>
+            </div>
+            <div class="header-right">
+                GM% by quarter
+            </div>
+        </div>
+
+        <div class="metrics">
+            <div class="metric-item">
+                <div class="metric-label">Non-T&M (Q1'26)</div>
+                <div class="metric-value metric-orange" id="nonTmMetric">39.77%</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-label">T&M (Q1'26)</div>
+                <div class="metric-value metric-blue" id="tmMetric">38.61%</div>
+            </div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #FF5F2D;"></div>
+                <span>Non-T&M</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #4442E3;"></div>
+                <span>T&M</span>
+            </div>
+        </div>
+        
+        <div class="chart-wrapper">
+            <canvas id="marginChart"></canvas>
+        </div>
+
+        <div class="data-section">
+            <div class="section-header">
+                <div class="data-label">EDIT SOURCE DATA</div>
+                <button class="toggle-btn" onclick="toggleDataSection()">−</button>
+            </div>
+
+            <div class="data-content" id="dataContent">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Quarter</th>
+                            <th>T&M Margin (%)</th>
+                            <th>Non-T&M Margin (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataInputContainer"></tbody>
+                </table>
+
+                <div class="button-group">
+                    <button onclick="updateChart()">Update Chart</button>
+                    <button class="reset-btn" onclick="resetToDefault()">Reset to Default</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const defaultData = {
+            'FY25-Q1': { 'T&M': 38.68, 'Non-T&M': 38.29 },
+            'FY25-Q2': { 'T&M': 41.27, 'Non-T&M': 31.89 },
+            'FY25-Q3': { 'T&M': 38.72, 'Non-T&M': 38.87 },
+            'FY25-Q4': { 'T&M': 38.14, 'Non-T&M': 37.19 },
+            'FY26-Q1': { 'T&M': 38.61, 'Non-T&M': 39.77 }
+        };
+
+        let chart = null;
+        const quarters = Object.keys(defaultData);
+
+        function initializeInputs() {
+            const container = document.getElementById('dataInputContainer');
+            container.innerHTML = '';
+            quarters.forEach(quarter => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${quarter}</strong></td>
+                    <td><input type="number" id="${quarter}-T&M" value="${defaultData[quarter]['T&M']}" step="0.01" min="0"></td>
+                    <td><input type="number" id="${quarter}-Non-T&M" value="${defaultData[quarter]['Non-T&M']}" step="0.01" min="0"></td>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function updateChart() {
+            const tmData = quarters.map(q => parseFloat(document.getElementById(`${q}-T&M`).value) || 0);
+            const nonTmData = quarters.map(q => parseFloat(document.getElementById(`${q}-Non-T&M`).value) || 0);
+
+            // Update metrics
+            document.getElementById('nonTmMetric').textContent = nonTmData[nonTmData.length - 1].toFixed(2) + '%';
+            document.getElementById('tmMetric').textContent = tmData[tmData.length - 1].toFixed(2) + '%';
+
+            const canvas = document.getElementById('marginChart');
+            const ctx = canvas.getContext('2d');
+            
+            if (chart) chart.destroy();
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: quarters,
+                    datasets: [
+                        {
+                            label: 'Non-T&M',
+                            data: nonTmData,
+                            borderColor: '#FF5F2D',
+                            backgroundColor: 'rgba(255, 95, 45, 0.1)',
+                            borderWidth: 2.5,
+                            pointBackgroundColor: '#FF5F2D',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            tension: 0.3,
+                            fill: false
+                        },
+                        {
+                            label: 'T&M',
+                            data: tmData,
+                            borderColor: '#4442E3',
+                            backgroundColor: 'rgba(68, 66, 227, 0.1)',
+                            borderWidth: 2.5,
+                            pointBackgroundColor: '#4442E3',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            tension: 0.3,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { size: 11, weight: '600' }, color: '#181A24' }
+                        },
+                        y: {
+                            beginAtZero: false,
+                            min: 30,
+                            max: 45,
+                            ticks: {
+                                callback: (value) => value + '%',
+                                font: { size: 10 },
+                                color: '#6B7280'
+                            },
+                            grid: { color: '#E5E7EB' }
+                        }
+                    }
+                }
+            });
+
+            // Add data labels on points
+            addDataLabels(tmData, nonTmData);
+        }
+
+        function addDataLabels(tmData, nonTmData) {
+            setTimeout(() => {
+                const wrapper = document.querySelector('.chart-wrapper');
+                const existingSvg = wrapper.querySelector('svg.data-labels');
+                if (existingSvg) existingSvg.remove();
+
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.setAttribute('width', wrapper.offsetWidth);
+                svg.setAttribute('height', wrapper.offsetHeight);
+                svg.setAttribute('class', 'data-labels');
+                svg.style.position = 'absolute';
+                svg.style.top = '0';
+                svg.style.left = '0';
+                svg.style.pointerEvents = 'none';
+                svg.style.zIndex = '10';
+
+                const xScale = chart.scales.x;
+                const yScale = chart.scales.y;
+
+                quarters.forEach((quarter, idx) => {
+                    // Non-T&M label
+                    const nonTmY = yScale.getPixelForValue(nonTmData[idx]) - 15;
+                    const nonTmLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    nonTmLabel.setAttribute('x', xScale.getPixelForValue(idx) + 20);
+                    nonTmLabel.setAttribute('y', nonTmY);
+                    nonTmLabel.setAttribute('text-anchor', 'middle');
+                    nonTmLabel.setAttribute('font-size', '10');
+                    nonTmLabel.setAttribute('font-weight', '600');
+                    nonTmLabel.setAttribute('fill', '#FF5F2D');
+                    nonTmLabel.textContent = nonTmData[idx].toFixed(2) + '%';
+                    svg.appendChild(nonTmLabel);
+
+                    // T&M label
+                    const tmY = yScale.getPixelForValue(tmData[idx]) + 12;
+                    const tmLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    tmLabel.setAttribute('x', xScale.getPixelForValue(idx) + 20);
+                    tmLabel.setAttribute('y', tmY);
+                    tmLabel.setAttribute('text-anchor', 'middle');
+                    tmLabel.setAttribute('font-size', '10');
+                    tmLabel.setAttribute('font-weight', '600');
+                    tmLabel.setAttribute('fill', '#4442E3');
+                    tmLabel.textContent = tmData[idx].toFixed(2) + '%';
+                    svg.appendChild(tmLabel);
+                });
+
+                wrapper.appendChild(svg);
+            }, 300);
+        }
+
+        function resetToDefault() {
+            quarters.forEach(quarter => {
+                ['T&M', 'Non-T&M'].forEach(type => {
+                    const input = document.getElementById(`${quarter}-${type}`);
+                    if (input) input.value = defaultData[quarter][type];
+                });
+            });
+            updateChart();
+        }
+
+        function toggleDataSection() {
+            const content = document.getElementById('dataContent');
+            const btn = document.querySelector('.toggle-btn');
+            content.classList.toggle('hidden');
+            btn.textContent = content.classList.contains('hidden') ? '+' : '−';
+        }
+
+        window.addEventListener('load', () => {
+            initializeInputs();
+            updateChart();
+        });
+    </script>
+</body>
+</html>
