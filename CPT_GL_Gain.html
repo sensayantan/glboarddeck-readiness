@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPT — GL Gain</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #F2F3F6; padding: 2rem; }
+        .container { background: white; border-radius: 12px; padding: 30px; border: 1px solid #F2F3F6; box-shadow: 0 1px 4px rgba(0,0,0,.07); max-width: 1000px; margin: 0 auto; }
+        .header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+        .header-left { flex: 1; }
+        .header-left h2 { font-size: 24px; font-weight: 700; color: #181A24; margin-bottom: 8px; }
+        .header-left p { font-size: 12px; color: #6B7280; margin-bottom: 16px; }
+        .metric-box { display: flex; flex-direction: column; gap: 4px; margin-bottom: 20px; }
+        .metric-value { font-size: 32px; font-weight: 700; color: #4442E3; }
+        .metric-label { font-size: 12px; color: #6B7280; }
+        .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+        .tag { background: #4442E3; color: white; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+        .chart-wrapper { position: relative; width: 100%; height: 340px; margin-bottom: 30px; border: 1px solid #E5E7EB; border-radius: 8px; padding: 20px; }
+        .data-section { background: #F9F8F6; padding: 20px; border-radius: 8px; margin-top: 20px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .data-label { font-size: 11px; color: #6B7280; font-weight: 600; }
+        .toggle-btn { background: none; border: none; cursor: pointer; font-size: 18px; color: #4442E3; font-weight: bold; }
+        .toggle-btn:hover { color: #3333c0; }
+        .data-content { transition: all 0.3s ease; }
+        .data-content.hidden { display: none; }
+        .data-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+        .data-table th { background: #E5E7EB; padding: 8px; text-align: left; font-size: 9px; font-weight: 600; color: #181A24; border: 1px solid #D1D5DB; }
+        .data-table td { padding: 8px; border: 1px solid #D1D5DB; font-size: 10px; }
+        .data-table input { width: 100%; padding: 5px; border: 1px solid #E5E7EB; border-radius: 3px; font-size: 10px; }
+        .button-group { display: flex; gap: 10px; margin-top: 16px; }
+        button { padding: 8px 16px; background: #4442E3; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; }
+        button:hover { background: #3333c0; }
+        .reset-btn { background: #6B7280; }
+        .reset-btn:hover { background: #535353; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-top">
+            <div class="header-left">
+                <h2>CPT — GL Gain</h2>
+                <p>Q1'25 – Q1'26 · Efficiency gains accruing to GL</p>
+                <div class="metric-box">
+                    <div class="metric-value" id="fy25Total">$15.32M</div>
+                    <div class="metric-label">FY25 saving</div>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="tag">Non-T&M</div>
+            </div>
+        </div>
+        
+        <div class="chart-wrapper">
+            <canvas id="cptGlChart"></canvas>
+        </div>
+
+        <div class="data-section">
+            <div class="section-header">
+                <div class="data-label">EDIT SOURCE DATA</div>
+                <button class="toggle-btn" onclick="toggleDataSection()">−</button>
+            </div>
+
+            <div class="data-content" id="dataContent">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Quarter</th>
+                            <th>GL Gain ($M)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataInputContainer"></tbody>
+                </table>
+
+                <div class="button-group">
+                    <button onclick="updateChart()">Update Chart</button>
+                    <button class="reset-btn" onclick="resetToDefault()">Reset to Default</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const defaultData = {
+            'Q1\'25': 2.81,
+            'Q2\'25': 3.87,
+            'Q3\'25': 4.00,
+            'Q4\'25': 4.64,
+            'Q1\'26': 5.13
+        };
+
+        let chart = null;
+        const quarters = Object.keys(defaultData);
+
+        function initializeInputs() {
+            const container = document.getElementById('dataInputContainer');
+            container.innerHTML = '';
+            quarters.forEach(quarter => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${quarter}</strong></td>
+                    <td><input type="number" id="${quarter}" value="${defaultData[quarter]}" step="0.01" min="0"></td>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function updateChart() {
+            const data = quarters.map(q => parseFloat(document.getElementById(q).value) || 0);
+            
+            // Calculate FY25 total (sum of Q1-Q4 2025)
+            const fy25Total = data.slice(0, 4).reduce((a, b) => a + b, 0);
+            document.getElementById('fy25Total').textContent = '$' + fy25Total.toFixed(2) + 'M';
+
+            const canvas = document.getElementById('cptGlChart');
+            const ctx = canvas.getContext('2d');
+            
+            if (chart) chart.destroy();
+
+            // Create gradient colors from light to dark blue
+            const colors = [
+                '#7C79F5',  // Light blue
+                '#6B6FF0',  // 
+                '#5A65EB',  // 
+                '#495BE6',  // 
+                '#4442E3'   // Dark blue
+            ];
+
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: quarters,
+                    datasets: [
+                        {
+                            label: 'GL Gain',
+                            data: data,
+                            backgroundColor: colors,
+                            borderRadius: 3,
+                            barThickness: 50
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => '$' + context.parsed.y.toFixed(2) + 'M'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { size: 11, weight: '600' }, color: '#181A24' }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            max: 6,
+                            ticks: { display: false },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+
+            // Add value labels on top of bars
+            addValueLabels(data);
+        }
+
+        function addValueLabels(data) {
+            setTimeout(() => {
+                const wrapper = document.querySelector('.chart-wrapper');
+                const existingSvg = wrapper.querySelector('svg.value-labels');
+                if (existingSvg) existingSvg.remove();
+
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.setAttribute('width', wrapper.offsetWidth);
+                svg.setAttribute('height', wrapper.offsetHeight);
+                svg.setAttribute('class', 'value-labels');
+                svg.style.position = 'absolute';
+                svg.style.top = '0';
+                svg.style.left = '0';
+                svg.style.pointerEvents = 'none';
+                svg.style.zIndex = '10';
+
+                const xScale = chart.scales.x;
+                const yScale = chart.scales.y;
+
+                quarters.forEach((quarter, idx) => {
+                    const yPos = yScale.getPixelForValue(data[idx]) - 12;
+                    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    label.setAttribute('x', xScale.getPixelForValue(idx) + 20);
+                    label.setAttribute('y', yPos);
+                    label.setAttribute('text-anchor', 'middle');
+                    label.setAttribute('font-size', '12');
+                    label.setAttribute('font-weight', '700');
+                    label.setAttribute('fill', '#4442E3');
+                    label.textContent = '$' + data[idx].toFixed(2) + 'M';
+                    svg.appendChild(label);
+                });
+
+                wrapper.appendChild(svg);
+            }, 300);
+        }
+
+        function resetToDefault() {
+            quarters.forEach(quarter => {
+                const input = document.getElementById(quarter);
+                if (input) input.value = defaultData[quarter];
+            });
+            updateChart();
+        }
+
+        function toggleDataSection() {
+            const content = document.getElementById('dataContent');
+            const btn = document.querySelector('.toggle-btn');
+            content.classList.toggle('hidden');
+            btn.textContent = content.classList.contains('hidden') ? '+' : '−';
+        }
+
+        window.addEventListener('load', () => {
+            initializeInputs();
+            updateChart();
+        });
+    </script>
+</body>
+</html>
