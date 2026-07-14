@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Enabled Revenue</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #F2F3F6;
+            padding: 2rem;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid #F2F3F6;
+            box-shadow: 0 1px 4px rgba(0,0,0,.07);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #181A24;
+            margin-bottom: 8px;
+        }
+        .section-subtitle {
+            font-size: 11px;
+            color: #6B7280;
+            margin-bottom: 20px;
+        }
+        .legend {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 20px;
+            font-size: 12px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+        .chart-wrapper {
+            position: relative;
+            height: 320px;
+            margin-top: 20px;
+            margin-bottom: 30px;
+        }
+        .data-section {
+            background: #F9F8F6;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .data-label {
+            font-size: 11px;
+            color: #6B7280;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .data-input {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .input-group label {
+            font-size: 10px;
+            color: #6B7280;
+            margin-bottom: 4px;
+        }
+        .input-group input {
+            padding: 8px;
+            border: 1px solid #E5E7EB;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 8px 16px;
+            background: #4442E3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #3333c0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="section-title">AI Enabled Revenue</h2>
+        <p class="section-subtitle">Non-AI · AI-Enabled · AI-Native $M · QoQ | Based on 90%+ survey response</p>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #C8CAD3;"></div>
+                <span>Non-AI</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #4442E3;"></div>
+                <span>AI-Enabled</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #FF5F2D;"></div>
+                <span>AI-Native</span>
+            </div>
+        </div>
+        
+        <div class="chart-wrapper">
+            <canvas id="aiEnabledChart"></canvas>
+        </div>
+
+        <!-- Dynamic Data Controls -->
+        <div class="data-section">
+            <div class="data-label">EDIT SOURCE DATA (Chart updates dynamically)</div>
+            
+            <div class="data-input">
+                <!-- FY25 Non-AI -->
+                <div class="input-group">
+                    <label>FY25 Non-AI %</label>
+                    <input type="number" id="fy25NonAi" value="37.08" step="0.01">
+                </div>
+                <!-- FY25 AI-Enabled -->
+                <div class="input-group">
+                    <label>FY25 AI-Enabled %</label>
+                    <input type="number" id="fy25AiEnabled" value="55.80" step="0.01">
+                </div>
+                <!-- FY25 AI-Native -->
+                <div class="input-group">
+                    <label>FY25 AI-Native %</label>
+                    <input type="number" id="fy25AiNative" value="7.13" step="0.01">
+                </div>
+
+                <!-- Q1'26 Non-AI -->
+                <div class="input-group">
+                    <label>Q1'26 Non-AI %</label>
+                    <input type="number" id="q126NonAi" value="24.40" step="0.01">
+                </div>
+                <!-- Q1'26 AI-Enabled -->
+                <div class="input-group">
+                    <label>Q1'26 AI-Enabled %</label>
+                    <input type="number" id="q126AiEnabled" value="55.53" step="0.01">
+                </div>
+                <!-- Q1'26 AI-Native -->
+                <div class="input-group">
+                    <label>Q1'26 AI-Native %</label>
+                    <input type="number" id="q126AiNative" value="20.08" step="0.01">
+                </div>
+            </div>
+
+            <div class="data-input">
+                <!-- FY25 Total Revenue -->
+                <div class="input-group">
+                    <label>FY25 Total Revenue ($M)</label>
+                    <input type="number" id="fy25Total" value="1800.56" step="0.01">
+                </div>
+                <!-- Q1'26 Total Revenue -->
+                <div class="input-group">
+                    <label>Q1'26 Total Revenue ($M)</label>
+                    <input type="number" id="q126Total" value="426.21" step="0.01">
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button onclick="updateChart()">Update Chart</button>
+                <button onclick="resetToDefault()" style="background: #6B7280;">Reset to Default</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let chart = null;
+
+        function updateChart() {
+            const fy25NonAi = parseFloat(document.getElementById('fy25NonAi').value);
+            const fy25AiEnabled = parseFloat(document.getElementById('fy25AiEnabled').value);
+            const fy25AiNative = parseFloat(document.getElementById('fy25AiNative').value);
+            const q126NonAi = parseFloat(document.getElementById('q126NonAi').value);
+            const q126AiEnabled = parseFloat(document.getElementById('q126AiEnabled').value);
+            const q126AiNative = parseFloat(document.getElementById('q126AiNative').value);
+            const fy25Total = parseFloat(document.getElementById('fy25Total').value);
+            const q126Total = parseFloat(document.getElementById('q126Total').value);
+
+            const ctx = document.getElementById('aiEnabledChart').getContext('2d');
+            
+            if (chart) {
+                chart.destroy();
+            }
+
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['FY25', 'Q1\'26'],
+                    datasets: [
+                        {
+                            label: 'Non-AI',
+                            data: [fy25NonAi, q126NonAi],
+                            backgroundColor: '#C8CAD3',
+                            barThickness: 80,
+                            borderRadius: 0
+                        },
+                        {
+                            label: 'AI-Enabled',
+                            data: [fy25AiEnabled, q126AiEnabled],
+                            backgroundColor: '#4442E3',
+                            barThickness: 80,
+                            borderRadius: 0
+                        },
+                        {
+                            label: 'AI-Native',
+                            data: [fy25AiNative, q126AiNative],
+                            backgroundColor: '#FF5F2D',
+                            barThickness: 80,
+                            borderRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'x',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            grid: { display: false },
+                            ticks: {
+                                font: { size: 12, weight: '600' },
+                                color: '#181A24'
+                            }
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { 
+                                display: false
+                            },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+
+            // Add custom labels with totals and percentages
+            addCustomLabels(fy25NonAi, fy25AiEnabled, fy25AiNative, fy25Total, q126NonAi, q126AiEnabled, q126AiNative, q126Total);
+        }
+
+        function addCustomLabels(fy25NonAi, fy25AiEnabled, fy25AiNative, fy25Total, q126NonAi, q126AiEnabled, q126AiNative, q126Total) {
+            setTimeout(() => {
+                const wrapper = document.querySelector('.chart-wrapper');
+                const existingSvg = wrapper.querySelector('svg.custom-labels');
+                if (existingSvg) existingSvg.remove();
+
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.setAttribute('width', wrapper.offsetWidth + 60);
+                svg.setAttribute('height', wrapper.offsetHeight);
+                svg.setAttribute('class', 'custom-labels');
+                svg.style.position = 'absolute';
+                svg.style.top = '0';
+                svg.style.left = '-30px';
+                svg.style.pointerEvents = 'none';
+                svg.style.zIndex = '10';
+                svg.style.overflow = 'visible';
+
+                const xScale = chart.scales.x;
+                const yScale = chart.scales.y;
+
+                // FY25 - Total at top
+                const fy25TotalLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                fy25TotalLabel.setAttribute('x', xScale.getPixelForValue(0) + 30);
+                fy25TotalLabel.setAttribute('y', yScale.getPixelForValue(100) - 8);
+                fy25TotalLabel.setAttribute('text-anchor', 'middle');
+                fy25TotalLabel.setAttribute('font-size', '13');
+                fy25TotalLabel.setAttribute('font-weight', '700');
+                fy25TotalLabel.setAttribute('fill', '#181A24');
+                fy25TotalLabel.textContent = '$' + fy25Total.toFixed(1) + 'M';
+                svg.appendChild(fy25TotalLabel);
+
+                // FY25 - Non-AI %
+                const fy25NonAiLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                const fy25NonAiY = yScale.getPixelForValue(fy25NonAi / 2);
+                fy25NonAiLabel.setAttribute('x', xScale.getPixelForValue(0) + 30);
+                fy25NonAiLabel.setAttribute('y', fy25NonAiY);
+                fy25NonAiLabel.setAttribute('text-anchor', 'middle');
+                fy25NonAiLabel.setAttribute('font-size', '12');
+                fy25NonAiLabel.setAttribute('font-weight', '700');
+                fy25NonAiLabel.setAttribute('fill', 'white');
+                fy25NonAiLabel.textContent = fy25NonAi.toFixed(0) + '%';
+                svg.appendChild(fy25NonAiLabel);
+
+                // FY25 - AI-Enabled %
+                const fy25AiEnabledLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                const fy25AiEnabledY = yScale.getPixelForValue(fy25NonAi + fy25AiEnabled / 2);
+                fy25AiEnabledLabel.setAttribute('x', xScale.getPixelForValue(0) + 30);
+                fy25AiEnabledLabel.setAttribute('y', fy25AiEnabledY);
+                fy25AiEnabledLabel.setAttribute('text-anchor', 'middle');
+                fy25AiEnabledLabel.setAttribute('font-size', '12');
+                fy25AiEnabledLabel.setAttribute('font-weight', '700');
+                fy25AiEnabledLabel.setAttribute('fill', 'white');
+                fy25AiEnabledLabel.textContent = fy25AiEnabled.toFixed(0) + '%';
+                svg.appendChild(fy25AiEnabledLabel);
+
+                // FY25 - AI-Native %
+                const fy25AiNativeLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                const fy25AiNativeY = yScale.getPixelForValue(fy25NonAi + fy25AiEnabled + fy25AiNative / 2);
+                fy25AiNativeLabel.setAttribute('x', xScale.getPixelForValue(0) + 30);
+                fy25AiNativeLabel.setAttribute('y', fy25AiNativeY);
+                fy25AiNativeLabel.setAttribute('text-anchor', 'middle');
+                fy25AiNativeLabel.setAttribute('font-size', '12');
+                fy25AiNativeLabel.setAttribute('font-weight', '700');
+                fy25AiNativeLabel.setAttribute('fill', 'white');
+                fy25AiNativeLabel.textContent = fy25AiNative.toFixed(0) + '%';
+                svg.appendChild(fy25AiNativeLabel);
+
+                // Q1'26 - Total at top
+                const q126TotalLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                q126TotalLabel.setAttribute('x', xScale.getPixelForValue(1) + 30);
+                q126TotalLabel.setAttribute('y', yScale.getPixelForValue(100) - 8);
+                q126TotalLabel.setAttribute('text-anchor', 'middle');
+                q126TotalLabel.setAttribute('font-size', '13');
+                q126TotalLabel.setAttribute('font-weight', '700');
+                q126TotalLabel.setAttribute('fill', '#181A24');
+                q126TotalLabel.textContent = '$' + q126Total.toFixed(0) + 'M';
+                svg.appendChild(q126TotalLabel);
+
+                // Q1'26 - Non-AI %
+                const q126NonAiLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                const q126NonAiY = yScale.getPixelForValue(q126NonAi / 2);
+                q126NonAiLabel.setAttribute('x', xScale.getPixelForValue(1) + 30);
+                q126NonAiLabel.setAttribute('y', q126NonAiY);
+                q126NonAiLabel.setAttribute('text-anchor', 'middle');
+                q126NonAiLabel.setAttribute('font-size', '12');
+                q126NonAiLabel.setAttribute('font-weight', '700');
+                q126NonAiLabel.setAttribute('fill', 'white');
+                q126NonAiLabel.textContent = q126NonAi.toFixed(0) + '%';
+                svg.appendChild(q126NonAiLabel);
+
+                // Q1'26 - AI-Enabled %
+                const q126AiEnabledLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                const q126AiEnabledY = yScale.getPixelForValue(q126NonAi + q126AiEnabled / 2);
+                q126AiEnabledLabel.setAttribute('x', xScale.getPixelForValue(1) + 30);
+                q126AiEnabledLabel.setAttribute('y', q126AiEnabledY);
+                q126AiEnabledLabel.setAttribute('text-anchor', 'middle');
+                q126AiEnabledLabel.setAttribute('font-size', '12');
+                q126AiEnabledLabel.setAttribute('font-weight', '700');
+                q126AiEnabledLabel.setAttribute('fill', 'white');
+                q126AiEnabledLabel.textContent = q126AiEnabled.toFixed(0) + '%';
+                svg.appendChild(q126AiEnabledLabel);
+
+                // Q1'26 - AI-Native %
+                const q126AiNativeLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                const q126AiNativeY = yScale.getPixelForValue(q126NonAi + q126AiEnabled + q126AiNative / 2);
+                q126AiNativeLabel.setAttribute('x', xScale.getPixelForValue(1) + 30);
+                q126AiNativeLabel.setAttribute('y', q126AiNativeY);
+                q126AiNativeLabel.setAttribute('text-anchor', 'middle');
+                q126AiNativeLabel.setAttribute('font-size', '12');
+                q126AiNativeLabel.setAttribute('font-weight', '700');
+                q126AiNativeLabel.setAttribute('fill', 'white');
+                q126AiNativeLabel.textContent = q126AiNative.toFixed(0) + '%';
+                svg.appendChild(q126AiNativeLabel);
+
+                wrapper.appendChild(svg);
+            }, 300);
+        }
+
+        function resetToDefault() {
+            document.getElementById('fy25NonAi').value = '37.08';
+            document.getElementById('fy25AiEnabled').value = '55.80';
+            document.getElementById('fy25AiNative').value = '7.13';
+            document.getElementById('q126NonAi').value = '24.40';
+            document.getElementById('q126AiEnabled').value = '55.53';
+            document.getElementById('q126AiNative').value = '20.08';
+            document.getElementById('fy25Total').value = '1800.56';
+            document.getElementById('q126Total').value = '426.21';
+            updateChart();
+        }
+
+        // Initialize chart on page load
+        window.addEventListener('load', updateChart);
+    </script>
+</body>
+</html>
