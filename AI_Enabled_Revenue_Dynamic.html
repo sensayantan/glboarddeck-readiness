@@ -64,36 +64,64 @@
             border-radius: 8px;
             margin-top: 20px;
         }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
         .data-label {
             font-size: 11px;
             color: #6B7280;
-            margin-bottom: 8px;
             font-weight: 600;
         }
-        .data-input {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
+        .toggle-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            color: #4442E3;
+            font-weight: bold;
+        }
+        .toggle-btn:hover {
+            color: #3333c0;
+        }
+        .data-content {
+            transition: all 0.3s ease;
+        }
+        .data-content.hidden {
+            display: none;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
             margin-bottom: 16px;
         }
-        .input-group {
-            display: flex;
-            flex-direction: column;
-        }
-        .input-group label {
-            font-size: 10px;
-            color: #6B7280;
-            margin-bottom: 4px;
-        }
-        .input-group input {
+        .data-table th {
+            background: #E5E7EB;
             padding: 8px;
+            text-align: left;
+            font-size: 9px;
+            font-weight: 600;
+            color: #181A24;
+            border: 1px solid #D1D5DB;
+        }
+        .data-table td {
+            padding: 8px;
+            border: 1px solid #D1D5DB;
+            font-size: 10px;
+        }
+        .data-table input {
+            width: 100%;
+            padding: 5px;
             border: 1px solid #E5E7EB;
-            border-radius: 4px;
-            font-size: 12px;
+            border-radius: 3px;
+            font-size: 10px;
         }
         .button-group {
             display: flex;
             gap: 10px;
+            margin-top: 16px;
         }
         button {
             padding: 8px 16px;
@@ -107,6 +135,12 @@
         }
         button:hover {
             background: #3333c0;
+        }
+        .reset-btn {
+            background: #6B7280;
+        }
+        .reset-btn:hover {
+            background: #535353;
         }
     </style>
 </head>
@@ -136,58 +170,48 @@
 
         <!-- Dynamic Data Controls -->
         <div class="data-section">
-            <div class="data-label">EDIT SOURCE DATA (Chart updates dynamically)</div>
-            
-            <div class="data-input">
-                <!-- FY25 Non-AI -->
-                <div class="input-group">
-                    <label>FY25 Non-AI %</label>
-                    <input type="number" id="fy25NonAi" value="37.08" step="0.01">
-                </div>
-                <!-- FY25 AI-Enabled -->
-                <div class="input-group">
-                    <label>FY25 AI-Enabled %</label>
-                    <input type="number" id="fy25AiEnabled" value="55.80" step="0.01">
-                </div>
-                <!-- FY25 AI-Native -->
-                <div class="input-group">
-                    <label>FY25 AI-Native %</label>
-                    <input type="number" id="fy25AiNative" value="7.13" step="0.01">
-                </div>
-
-                <!-- Q1'26 Non-AI -->
-                <div class="input-group">
-                    <label>Q1'26 Non-AI %</label>
-                    <input type="number" id="q126NonAi" value="24.40" step="0.01">
-                </div>
-                <!-- Q1'26 AI-Enabled -->
-                <div class="input-group">
-                    <label>Q1'26 AI-Enabled %</label>
-                    <input type="number" id="q126AiEnabled" value="55.53" step="0.01">
-                </div>
-                <!-- Q1'26 AI-Native -->
-                <div class="input-group">
-                    <label>Q1'26 AI-Native %</label>
-                    <input type="number" id="q126AiNative" value="20.08" step="0.01">
-                </div>
+            <div class="section-header">
+                <div class="data-label">EDIT SOURCE DATA</div>
+                <button class="toggle-btn" onclick="toggleDataSection()">−</button>
             </div>
 
-            <div class="data-input">
-                <!-- FY25 Total Revenue -->
-                <div class="input-group">
-                    <label>FY25 Total Revenue ($M)</label>
-                    <input type="number" id="fy25Total" value="1800.56" step="0.01">
-                </div>
-                <!-- Q1'26 Total Revenue -->
-                <div class="input-group">
-                    <label>Q1'26 Total Revenue ($M)</label>
-                    <input type="number" id="q126Total" value="426.21" step="0.01">
-                </div>
-            </div>
+            <div class="data-content" id="dataContent">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>FY25 (%)</th>
+                            <th>Q1'26 (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Non-AI</strong></td>
+                            <td><input type="number" id="fy25NonAi" value="37.08" step="0.01"></td>
+                            <td><input type="number" id="q126NonAi" value="24.40" step="0.01"></td>
+                        </tr>
+                        <tr>
+                            <td><strong>AI-Enabled</strong></td>
+                            <td><input type="number" id="fy25AiEnabled" value="55.80" step="0.01"></td>
+                            <td><input type="number" id="q126AiEnabled" value="55.53" step="0.01"></td>
+                        </tr>
+                        <tr>
+                            <td><strong>AI-Native</strong></td>
+                            <td><input type="number" id="fy25AiNative" value="7.13" step="0.01"></td>
+                            <td><input type="number" id="q126AiNative" value="20.08" step="0.01"></td>
+                        </tr>
+                        <tr style="border-top: 2px solid #D1D5DB;">
+                            <td><strong>Total Revenue ($M)</strong></td>
+                            <td><input type="number" id="fy25Total" value="1800.56" step="0.01"></td>
+                            <td><input type="number" id="q126Total" value="426.21" step="0.01"></td>
+                        </tr>
+                    </tbody>
+                </table>
 
-            <div class="button-group">
-                <button onclick="updateChart()">Update Chart</button>
-                <button onclick="resetToDefault()" style="background: #6B7280;">Reset to Default</button>
+                <div class="button-group">
+                    <button onclick="updateChart()">Update Chart</button>
+                    <button class="reset-btn" onclick="resetToDefault()">Reset to Default</button>
+                </div>
             </div>
         </div>
     </div>
@@ -196,20 +220,20 @@
         let chart = null;
 
         function updateChart() {
-            const fy25NonAi = parseFloat(document.getElementById('fy25NonAi').value);
-            const fy25AiEnabled = parseFloat(document.getElementById('fy25AiEnabled').value);
-            const fy25AiNative = parseFloat(document.getElementById('fy25AiNative').value);
-            const q126NonAi = parseFloat(document.getElementById('q126NonAi').value);
-            const q126AiEnabled = parseFloat(document.getElementById('q126AiEnabled').value);
-            const q126AiNative = parseFloat(document.getElementById('q126AiNative').value);
-            const fy25Total = parseFloat(document.getElementById('fy25Total').value);
-            const q126Total = parseFloat(document.getElementById('q126Total').value);
+            const fy25NonAi = parseFloat(document.getElementById('fy25NonAi').value) || 0;
+            const fy25AiEnabled = parseFloat(document.getElementById('fy25AiEnabled').value) || 0;
+            const fy25AiNative = parseFloat(document.getElementById('fy25AiNative').value) || 0;
+            const fy25Total = parseFloat(document.getElementById('fy25Total').value) || 0;
 
-            const ctx = document.getElementById('aiEnabledChart').getContext('2d');
+            const q126NonAi = parseFloat(document.getElementById('q126NonAi').value) || 0;
+            const q126AiEnabled = parseFloat(document.getElementById('q126AiEnabled').value) || 0;
+            const q126AiNative = parseFloat(document.getElementById('q126AiNative').value) || 0;
+            const q126Total = parseFloat(document.getElementById('q126Total').value) || 0;
+
+            const canvas = document.getElementById('aiEnabledChart');
+            const ctx = canvas.getContext('2d');
             
-            if (chart) {
-                chart.destroy();
-            }
+            if (chart) chart.destroy();
 
             chart = new Chart(ctx, {
                 type: 'bar',
@@ -407,6 +431,13 @@
             document.getElementById('fy25Total').value = '1800.56';
             document.getElementById('q126Total').value = '426.21';
             updateChart();
+        }
+
+        function toggleDataSection() {
+            const content = document.getElementById('dataContent');
+            const btn = document.querySelector('.toggle-btn');
+            content.classList.toggle('hidden');
+            btn.textContent = content.classList.contains('hidden') ? '+' : '−';
         }
 
         // Initialize chart on page load
