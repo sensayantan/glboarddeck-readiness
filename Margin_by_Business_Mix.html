@@ -18,10 +18,11 @@
         .metric-value { font-size: 18px; font-weight: 700; }
         .metric-orange { color: #FF5F2D; }
         .metric-blue { color: #4442E3; }
+        .metric-bps { font-size: 11px; color: #6B7280; }
         .legend { display: flex; gap: 24px; margin-bottom: 20px; font-size: 12px; }
         .legend-item { display: flex; align-items: center; gap: 8px; }
         .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
-        .chart-wrapper { position: relative; width: 100%; height: 320px; margin-bottom: 30px; border: 1px solid #E5E7EB; border-radius: 8px; padding: 20px; }
+        .chart-wrapper { position: relative; width: 100%; height: 360px; margin-bottom: 30px; border: 1px solid #E5E7EB; border-radius: 8px; padding: 20px; }
         .data-section { background: #F9F8F6; padding: 20px; border-radius: 8px; margin-top: 20px; }
         .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
         .data-label { font-size: 11px; color: #6B7280; font-weight: 600; }
@@ -47,7 +48,7 @@
                 <h2>Margin by Business Mix</h2>
             </div>
             <div class="header-right">
-                GM% by quarter
+                PM% by quarter
             </div>
         </div>
 
@@ -55,10 +56,12 @@
             <div class="metric-item">
                 <div class="metric-label">Non-T&M (Q1'26)</div>
                 <div class="metric-value metric-orange" id="nonTmMetric">39.77%</div>
+                <div class="metric-bps" id="nonTmBps">258 BPS Project Margin improvement</div>
             </div>
             <div class="metric-item">
                 <div class="metric-label">T&M (Q1'26)</div>
                 <div class="metric-value metric-blue" id="tmMetric">38.61%</div>
+                <div class="metric-bps" id="tmBps">47 BPS Project Margin improvement</div>
             </div>
         </div>
 
@@ -129,6 +132,23 @@
             });
         }
 
+        function calculateBPS() {
+            const q4_25_tm = parseFloat(document.getElementById('FY25-Q4-T&M').value) || 38.14;
+            const q4_25_nonTm = parseFloat(document.getElementById('FY25-Q4-Non-T&M').value) || 37.19;
+
+            const q1_26_tm = parseFloat(document.getElementById('FY26-Q1-T&M').value) || 38.61;
+            const q1_26_nonTm = parseFloat(document.getElementById('FY26-Q1-Non-T&M').value) || 39.77;
+
+            const nonTmBps = (q1_26_nonTm - q4_25_nonTm) * 100;
+            const tmBps = (q1_26_tm - q4_25_tm) * 100;
+
+            const nonTmLabel = nonTmBps >= 0 ? nonTmBps.toFixed(0) + ' BPS Project Margin improvement' : Math.abs(nonTmBps).toFixed(0) + ' BPS Project Margin dilution';
+            const tmLabel = tmBps >= 0 ? tmBps.toFixed(0) + ' BPS Project Margin improvement' : Math.abs(tmBps).toFixed(0) + ' BPS Project Margin dilution';
+
+            document.getElementById('nonTmBps').textContent = nonTmLabel;
+            document.getElementById('tmBps').textContent = tmLabel;
+        }
+
         function updateChart() {
             const tmData = quarters.map(q => parseFloat(document.getElementById(`${q}-T&M`).value) || 0);
             const nonTmData = quarters.map(q => parseFloat(document.getElementById(`${q}-Non-T&M`).value) || 0);
@@ -136,6 +156,9 @@
             // Update metrics
             document.getElementById('nonTmMetric').textContent = nonTmData[nonTmData.length - 1].toFixed(2) + '%';
             document.getElementById('tmMetric').textContent = tmData[tmData.length - 1].toFixed(2) + '%';
+            
+            // Update BPS
+            calculateBPS();
 
             const canvas = document.getElementById('marginChart');
             const ctx = canvas.getContext('2d');
@@ -151,7 +174,7 @@
                             label: 'Non-T&M',
                             data: nonTmData,
                             borderColor: '#FF5F2D',
-                            backgroundColor: 'rgba(255, 95, 45, 0.1)',
+                            backgroundColor: 'rgba(255, 95, 45, 0.15)',
                             borderWidth: 2.5,
                             pointBackgroundColor: '#FF5F2D',
                             pointBorderColor: '#fff',
@@ -159,13 +182,13 @@
                             pointRadius: 5,
                             pointHoverRadius: 7,
                             tension: 0.3,
-                            fill: false
+                            fill: true
                         },
                         {
                             label: 'T&M',
                             data: tmData,
                             borderColor: '#4442E3',
-                            backgroundColor: 'rgba(68, 66, 227, 0.1)',
+                            backgroundColor: 'rgba(68, 66, 227, 0.15)',
                             borderWidth: 2.5,
                             pointBackgroundColor: '#4442E3',
                             pointBorderColor: '#fff',
@@ -173,7 +196,7 @@
                             pointRadius: 5,
                             pointHoverRadius: 7,
                             tension: 0.3,
-                            fill: false
+                            fill: true
                         }
                     ]
                 },
@@ -199,11 +222,9 @@
                             min: 30,
                             max: 45,
                             ticks: {
-                                callback: (value) => value + '%',
-                                font: { size: 10 },
-                                color: '#6B7280'
+                                display: false
                             },
-                            grid: { color: '#E5E7EB' }
+                            grid: { display: false }
                         }
                     }
                 }
@@ -234,7 +255,14 @@
 
                 quarters.forEach((quarter, idx) => {
                     // Non-T&M label
-                    const nonTmY = yScale.getPixelForValue(nonTmData[idx]) - 15;
+                    let nonTmY;
+                    if (idx < 4) {
+                        // FY25-Q1 to Q4: position much lower
+                        nonTmY = yScale.getPixelForValue(nonTmData[idx]) + 40;
+                    } else {
+                        // FY26-Q1: position above
+                        nonTmY = yScale.getPixelForValue(nonTmData[idx]) - 15;
+                    }
                     const nonTmLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                     nonTmLabel.setAttribute('x', xScale.getPixelForValue(idx) + 20);
                     nonTmLabel.setAttribute('y', nonTmY);
@@ -246,7 +274,7 @@
                     svg.appendChild(nonTmLabel);
 
                     // T&M label
-                    const tmY = yScale.getPixelForValue(tmData[idx]) + 12;
+                    const tmY = yScale.getPixelForValue(tmData[idx]) - 12;
                     const tmLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                     tmLabel.setAttribute('x', xScale.getPixelForValue(idx) + 20);
                     tmLabel.setAttribute('y', tmY);
