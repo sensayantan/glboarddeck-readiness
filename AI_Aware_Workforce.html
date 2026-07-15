@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Aware & Proficient Workforce</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #F2F3F6; padding: 2rem; }
+        .container { background: white; border-radius: 12px; padding: 30px; border: 1px solid #F2F3F6; box-shadow: 0 1px 4px rgba(0,0,0,.07); max-width: 1000px; margin: 0 auto; }
+        .header { margin-bottom: 20px; }
+        .header h2 { font-size: 18px; font-weight: 700; color: #181A24; margin-bottom: 4px; }
+        .header p { font-size: 11px; color: #6B7280; margin-bottom: 16px; }
+        .legend { display: flex; gap: 32px; margin-bottom: 20px; font-size: 11px; flex-wrap: wrap; }
+        .legend-item { display: flex; align-items: center; gap: 8px; }
+        .legend-line { width: 30px; height: 2px; background: #4442E3; }
+        .legend-line.dotted { border-top: 2px dashed #4442E3; background: none; }
+        .legend-line.orange { background: #FF5F2D; }
+        .legend-line.orange.dotted { border-top: 2px dashed #FF5F2D; background: none; }
+        .chart-wrapper { position: relative; width: 100%; height: 380px; margin-bottom: 30px; border: 1px solid #E5E7EB; border-radius: 8px; padding: 20px; }
+        .metrics-row { display: flex; gap: 40px; margin-bottom: 30px; }
+        .metric-box { flex: 1; background: #F9F8F6; padding: 16px; border-radius: 8px; }
+        .metric-label { font-size: 11px; color: #6B7280; margin-bottom: 8px; }
+        .metric-value { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+        .metric-value.blue { color: #4442E3; }
+        .metric-value.orange { color: #FF5F2D; }
+        .metric-detail { font-size: 10px; color: #6B7280; line-height: 1.4; }
+        .data-section { background: #F9F8F6; padding: 20px; border-radius: 8px; margin-top: 20px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .data-label { font-size: 11px; color: #6B7280; font-weight: 600; }
+        .toggle-btn { background: none; border: none; cursor: pointer; font-size: 18px; color: #4442E3; font-weight: bold; }
+        .toggle-btn:hover { color: #3333c0; }
+        .data-content { transition: all 0.3s ease; }
+        .data-content.hidden { display: none; }
+        .data-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+        .data-table th { background: #E5E7EB; padding: 8px; text-align: left; font-size: 9px; font-weight: 600; color: #181A24; border: 1px solid #D1D5DB; }
+        .data-table td { padding: 8px; border: 1px solid #D1D5DB; font-size: 10px; }
+        .data-table input { width: 100%; padding: 5px; border: 1px solid #E5E7EB; border-radius: 3px; font-size: 10px; }
+        .button-group { display: flex; gap: 10px; margin-top: 16px; }
+        button { padding: 8px 16px; background: #4442E3; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; }
+        button:hover { background: #3333c0; }
+        .reset-btn { background: #6B7280; }
+        .reset-btn:hover { background: #535353; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>AI Aware & Proficient Workforce</h2>
+            <p>FY25 Q4 - FY26 Q4 trajectory with projections</p>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-line"></div>
+                <div class="legend-line dotted"></div>
+                <span>AI Aware (solid = actual, dotted = projected)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-line orange"></div>
+                <div class="legend-line orange dotted"></div>
+                <span>AI Proficient (solid = actual, dotted = projected)</span>
+            </div>
+        </div>
+
+        <div class="chart-wrapper">
+            <canvas id="workforceChart"></canvas>
+        </div>
+
+        <div class="metrics-row">
+            <div class="metric-box">
+                <div class="metric-label">AI Aware</div>
+                <div class="metric-value blue" id="awareValue">95%</div>
+                <div class="metric-detail">Q1'26 | 5pp gap to 100% target</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-label">AI Proficient</div>
+                <div class="metric-value orange" id="proficientValue">48%</div>
+                <div class="metric-detail">Q1'26 | On track to 75% by Q4'26</div>
+            </div>
+        </div>
+
+        <div class="data-section">
+            <div class="section-header">
+                <div class="data-label">EDIT SOURCE DATA</div>
+                <button class="toggle-btn" onclick="toggleDataSection()">−</button>
+            </div>
+
+            <div class="data-content" id="dataContent">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Quarter</th>
+                            <th>AI Aware (%)</th>
+                            <th>AI Proficient (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataInputContainer"></tbody>
+                </table>
+
+                <div class="button-group">
+                    <button onclick="updateChart()">Update Chart</button>
+                    <button class="reset-btn" onclick="resetToDefault()">Reset to Default</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const defaultData = {
+            'Q4\'25': { 'Aware': 78, 'Proficient': 22 },
+            'Q1\'26': { 'Aware': 95, 'Proficient': 48 },
+            'Q2\'26': { 'Aware': 98, 'Proficient': 57 },
+            'Q3\'26': { 'Aware': 99, 'Proficient': 66 },
+            'Q4\'26': { 'Aware': 100, 'Proficient': 75 }
+        };
+
+        let chart = null;
+        const quarters = Object.keys(defaultData);
+        const actualQuarters = ['Q4\'25', 'Q1\'26'];
+        const projectedQuarters = ['Q2\'26', 'Q3\'26', 'Q4\'26'];
+
+        function initializeInputs() {
+            const container = document.getElementById('dataInputContainer');
+            container.innerHTML = '';
+            quarters.forEach(quarter => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${quarter}</strong></td>
+                    <td><input type="number" id="${quarter}-Aware" value="${defaultData[quarter]['Aware']}" step="1" min="0" max="100"></td>
+                    <td><input type="number" id="${quarter}-Proficient" value="${defaultData[quarter]['Proficient']}" step="1" min="0" max="100"></td>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function updateChart() {
+            const awareData = quarters.map(q => parseFloat(document.getElementById(`${q}-Aware`).value) || 0);
+            const proficientData = quarters.map(q => parseFloat(document.getElementById(`${q}-Proficient`).value) || 0);
+
+            // Update metrics
+            document.getElementById('awareValue').textContent = awareData[1] + '%';
+            document.getElementById('proficientValue').textContent = proficientData[1] + '%';
+
+            const canvas = document.getElementById('workforceChart');
+            const ctx = canvas.getContext('2d');
+            
+            if (chart) chart.destroy();
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: quarters,
+                    datasets: [
+                        {
+                            label: 'AI Aware',
+                            data: awareData,
+                            borderColor: '#4442E3',
+                            backgroundColor: 'rgba(68, 66, 227, 0.15)',
+                            borderWidth: 2.5,
+                            pointBackgroundColor: '#4442E3',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            tension: 0.3,
+                            fill: true,
+                            segment: {
+                                borderDash: (ctx) => {
+                                    if (ctx.p0DataIndex >= 1 && ctx.p1DataIndex >= 1) {
+                                        return [5, 5];
+                                    }
+                                    return [];
+                                }
+                            }
+                        },
+                        {
+                            label: 'AI Proficient',
+                            data: proficientData,
+                            borderColor: '#FF5F2D',
+                            backgroundColor: 'rgba(255, 95, 45, 0.15)',
+                            borderWidth: 2.5,
+                            pointBackgroundColor: '#FF5F2D',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            tension: 0.3,
+                            fill: true,
+                            segment: {
+                                borderDash: (ctx) => {
+                                    if (ctx.p0DataIndex >= 1 && ctx.p1DataIndex >= 1) {
+                                        return [5, 5];
+                                    }
+                                    return [];
+                                }
+                            }
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    clip: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => context.dataset.label + ': ' + context.parsed.y + '%'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { size: 11, weight: '600' }, color: '#181A24' }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            min: 0,
+                            max: 100,
+                            ticks: { display: false },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+
+            // Add data labels on points
+            addDataLabels(awareData, proficientData);
+        }
+
+        function addDataLabels(awareData, proficientData) {
+            setTimeout(() => {
+                const wrapper = document.querySelector('.chart-wrapper');
+                const existingSvg = wrapper.querySelector('svg.data-labels');
+                if (existingSvg) existingSvg.remove();
+
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.setAttribute('width', wrapper.offsetWidth);
+                svg.setAttribute('height', wrapper.offsetHeight);
+                svg.setAttribute('class', 'data-labels');
+                svg.style.position = 'absolute';
+                svg.style.top = '0';
+                svg.style.left = '0';
+                svg.style.pointerEvents = 'none';
+                svg.style.zIndex = '10';
+                svg.style.overflow = 'visible';
+
+                const xScale = chart.scales.x;
+                const yScale = chart.scales.y;
+
+                // Only show labels for key quarters: Q4'25 (idx 0), Q1'26 (idx 1), Q4'26 (idx 4)
+                const labelIndices = [0, 1, 4];
+
+                quarters.forEach((quarter, idx) => {
+                    if (!labelIndices.includes(idx)) return; // Skip intermediate quarters
+
+                    // AI Aware label
+                    let awareY = yScale.getPixelForValue(awareData[idx]) - 10;
+                    // Special handling for top values
+                    if (awareData[idx] >= 95) {
+                        awareY = yScale.getPixelForValue(awareData[idx]) - 18;
+                    }
+                    const awareLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    awareLabel.setAttribute('x', xScale.getPixelForValue(idx) + 20);
+                    awareLabel.setAttribute('y', awareY);
+                    awareLabel.setAttribute('text-anchor', 'middle');
+                    awareLabel.setAttribute('font-size', '11');
+                    awareLabel.setAttribute('font-weight', '700');
+                    awareLabel.setAttribute('fill', '#4442E3');
+                    awareLabel.textContent = awareData[idx] + '%';
+                    svg.appendChild(awareLabel);
+
+                    // AI Proficient label
+                    const proficientY = yScale.getPixelForValue(proficientData[idx]) + 14;
+                    const proficientLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    proficientLabel.setAttribute('x', xScale.getPixelForValue(idx) + 20);
+                    proficientLabel.setAttribute('y', proficientY);
+                    proficientLabel.setAttribute('text-anchor', 'middle');
+                    proficientLabel.setAttribute('font-size', '11');
+                    proficientLabel.setAttribute('font-weight', '700');
+                    proficientLabel.setAttribute('fill', '#FF5F2D');
+                    proficientLabel.textContent = proficientData[idx] + '%';
+                    svg.appendChild(proficientLabel);
+                });
+
+                wrapper.appendChild(svg);
+            }, 300);
+        }
+
+        function resetToDefault() {
+            quarters.forEach(quarter => {
+                ['Aware', 'Proficient'].forEach(type => {
+                    const input = document.getElementById(`${quarter}-${type}`);
+                    if (input) input.value = defaultData[quarter][type];
+                });
+            });
+            updateChart();
+        }
+
+        function toggleDataSection() {
+            const content = document.getElementById('dataContent');
+            const btn = document.querySelector('.toggle-btn');
+            content.classList.toggle('hidden');
+            btn.textContent = content.classList.contains('hidden') ? '+' : '−';
+        }
+
+        window.addEventListener('load', () => {
+            initializeInputs();
+            updateChart();
+        });
+    </script>
+</body>
+</html>
