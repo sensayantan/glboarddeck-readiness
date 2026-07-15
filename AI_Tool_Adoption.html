@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Tool Adoption</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #F2F3F6;
+            padding: 2rem;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid #F2F3F6;
+            box-shadow: 0 1px 4px rgba(0,0,0,.07);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #181A24;
+            margin-bottom: 8px;
+        }
+        .section-subtitle {
+            font-size: 11px;
+            color: #6B7280;
+            margin-bottom: 20px;
+        }
+        .legend {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            font-size: 11px;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+        }
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            margin-bottom: 30px;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .data-section {
+            background: #F9F8F6;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .data-label {
+            font-size: 11px;
+            color: #6B7280;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 16px;
+            font-size: 10px;
+        }
+        .data-table th {
+            background: #E5E7EB;
+            padding: 8px;
+            text-align: left;
+            font-size: 9px;
+            font-weight: 600;
+            color: #181A24;
+            border: 1px solid #D1D5DB;
+        }
+        .data-table td {
+            padding: 8px;
+            border: 1px solid #D1D5DB;
+        }
+        .data-table input {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #E5E7EB;
+            border-radius: 3px;
+            font-size: 10px;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        button {
+            padding: 8px 16px;
+            background: #4442E3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #3333c0;
+        }
+        .reset-btn {
+            background: #6B7280;
+        }
+        .reset-btn:hover {
+            background: #535353;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="section-title">AI Tool Adoption</h2>
+        <p class="section-subtitle">FY25-Q3 · FY25-Q4 · FY26-Q1 | Cumulative Tool Adoption by Quarter</p>
+        
+        <div class="legend" id="legendContainer"></div>
+        
+        <div class="chart-wrapper">
+            <canvas id="toolAdoptionChart"></canvas>
+        </div>
+
+        <!-- Dynamic Data Controls -->
+        <div class="data-section">
+            <div class="data-label">EDIT SOURCE DATA BY QUARTER</div>
+            
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Tool</th>
+                        <th>FY25-Q3 (%)</th>
+                        <th>FY25-Q4 (%)</th>
+                        <th>FY26-Q1 (%)</th>
+                    </tr>
+                </thead>
+                <tbody id="dataInputContainer"></tbody>
+            </table>
+
+            <div class="button-group">
+                <button onclick="updateChart()">Update Chart</button>
+                <button class="reset-btn" onclick="resetToDefault()">Reset to Default</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Register the datalabels plugin
+        Chart.register(ChartDataLabels);
+
+        // Define colors for each tool
+        const toolColors = {
+            'Claude': '#DE7356',
+            'Gemini': '#B4D6CB',
+            'CoPilot': '#99bd3c',
+            'ChatGPT': '#74AA9C',
+            'Others': '#C8CAD3',
+            'Cursor': '#F7F7F4',
+            'VelocityAI': '#FF5F2D',
+            'Figma': '#A259FF',
+            'Amazon Q': '#37BFF5',
+            'Windsor': '#3C0878',
+            'Perplexity': '#21808D',
+            'Grok': '#313131',
+            'Crew': '#FEDD00',
+            'IBM Watson': '#0530AD'
+        };
+
+        // ALL 14 tools data
+        const defaultData = {
+            'Claude': { 'FY25-Q3': 3.81, 'FY25-Q4': 8.04, 'FY26-Q1': 23.94 },
+            'Gemini': { 'FY25-Q3': 9.15, 'FY25-Q4': 18.79, 'FY26-Q1': 22.43 },
+            'CoPilot': { 'FY25-Q3': 18.55, 'FY25-Q4': 27.60, 'FY26-Q1': 17.56 },
+            'ChatGPT': { 'FY25-Q3': 4.93, 'FY25-Q4': 11.09, 'FY26-Q1': 11.15 },
+            'Others': { 'FY25-Q3': 7.25, 'FY25-Q4': 8.23, 'FY26-Q1': 4.53 },
+            'Cursor': { 'FY25-Q3': 5.39, 'FY25-Q4': 7.77, 'FY26-Q1': 3.48 },
+            'VelocityAI': { 'FY25-Q3': 2.23, 'FY25-Q4': 1.80, 'FY26-Q1': 3.24 },
+            'Figma': { 'FY25-Q3': 0, 'FY25-Q4': 0, 'FY26-Q1': 3.19 },
+            'Amazon Q': { 'FY25-Q3': 0.22, 'FY25-Q4': 0.44, 'FY26-Q1': 2.09 },
+            'Windsor': { 'FY25-Q3': 0.72, 'FY25-Q4': 0.10, 'FY26-Q1': 0.87 },
+            'Perplexity': { 'FY25-Q3': 0.59, 'FY25-Q4': 0.69, 'FY26-Q1': 0.39 },
+            'Grok': { 'FY25-Q3': 0.06, 'FY25-Q4': 0.22, 'FY26-Q1': 0.11 },
+            'Crew': { 'FY25-Q3': 1.08, 'FY25-Q4': 0.00, 'FY26-Q1': 0.04 },
+            'IBM Watson': { 'FY25-Q3': 0.00, 'FY25-Q4': 0.00, 'FY26-Q1': 0.00 }
+        };
+
+        let chart = null;
+        const quarters = ['FY25-Q3', 'FY25-Q4', 'FY26-Q1'];
+        // All tools sorted by FY26-Q1 usage
+        const allTools = Object.keys(defaultData).sort((a, b) => 
+            (defaultData[b]['FY26-Q1'] || 0) - (defaultData[a]['FY26-Q1'] || 0)
+        );
+        // Only these tools will show labels
+        const labeledTools = ['Claude', 'Gemini', 'CoPilot', 'ChatGPT', 'Cursor', 'VelocityAI', 'Others'];
+
+        function initializeInputs() {
+            const container = document.getElementById('dataInputContainer');
+            container.innerHTML = '';
+
+            allTools.forEach(tool => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${tool}</strong></td>
+                    <td><input type="number" id="${tool}-FY25-Q3" value="${defaultData[tool]['FY25-Q3']}" step="0.01" min="0"></td>
+                    <td><input type="number" id="${tool}-FY25-Q4" value="${defaultData[tool]['FY25-Q4']}" step="0.01" min="0"></td>
+                    <td><input type="number" id="${tool}-FY26-Q1" value="${defaultData[tool]['FY26-Q1']}" step="0.01" min="0"></td>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function initializeLegend() {
+            const container = document.getElementById('legendContainer');
+            container.innerHTML = '';
+
+            allTools.forEach(tool => {
+                const legendItem = document.createElement('div');
+                legendItem.className = 'legend-item';
+                legendItem.innerHTML = `
+                    <div class="legend-dot" style="background: ${toolColors[tool]};"></div>
+                    <span>${tool}</span>
+                `;
+                container.appendChild(legendItem);
+            });
+        }
+
+        function updateChart() {
+            try {
+                const datasets = [];
+
+                // Add ALL tools to the chart
+                allTools.forEach(tool => {
+                    const data = quarters.map(quarter => {
+                        const input = document.getElementById(`${tool}-${quarter}`);
+                        return input ? parseFloat(input.value) || 0 : 0;
+                    });
+
+                    datasets.push({
+                        label: tool,
+                        data: data,
+                        backgroundColor: toolColors[tool],
+                        borderRadius: 0,
+                        barPercentage: 0.6,
+                        categoryPercentage: 0.8
+                    });
+                });
+
+                const canvas = document.getElementById('toolAdoptionChart');
+                const ctx = canvas.getContext('2d');
+                
+                if (chart) {
+                    chart.destroy();
+                }
+
+                chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: quarters,
+                        datasets: datasets
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            datalabels: {
+                                color: '#181A24',
+                                font: {
+                                    weight: 'bold',
+                                    size: 10
+                                },
+                                formatter: function(value, context) {
+                                    // Only show label for the 7 labeled tools
+                                    const toolName = context.dataset.label;
+                                    if (labeledTools.includes(toolName) && value > 0) {
+                                        return value.toFixed(1) + '%';
+                                    }
+                                    return '';
+                                },
+                                anchor: function(context) {
+                                    const value = context.dataset.data[context.dataIndex];
+                                    return value < 5 ? 'end' : 'center';
+                                },
+                                align: function(context) {
+                                    const value = context.dataset.data[context.dataIndex];
+                                    return value < 5 ? 'top' : 'center';
+                                },
+                                offset: function(context) {
+                                    const value = context.dataset.data[context.dataIndex];
+                                    return value < 5 ? -20 : 0;
+                                },
+                                clip: false
+                            },
+                            tooltip: {
+                                stacked: true,
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ': ' + context.parsed.x.toFixed(2) + '%';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                stacked: true,
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + '%';
+                                    },
+                                    font: { size: 10 },
+                                    color: '#6B7280'
+                                },
+                                grid: { color: '#E5E7EB' }
+                            },
+                            y: {
+                                stacked: true,
+                                grid: { display: false },
+                                ticks: {
+                                    font: { size: 12, weight: '600' },
+                                    color: '#181A24'
+                                }
+                            }
+                        }
+                    }
+                });
+            } catch(err) {
+                console.error('Chart error:', err);
+            }
+        }
+
+        function resetToDefault() {
+            allTools.forEach(tool => {
+                quarters.forEach(quarter => {
+                    const input = document.getElementById(`${tool}-${quarter}`);
+                    if (input) {
+                        input.value = defaultData[tool][quarter];
+                    }
+                });
+            });
+            updateChart();
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            initializeLegend();
+            initializeInputs();
+            updateChart();
+        });
+    </script>
+</body>
+</html>
