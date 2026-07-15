@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPT — Client Gain</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #F2F3F6; padding: 2rem; }
+        .container { background: white; border-radius: 12px; padding: 30px; border: 1px solid #F2F3F6; box-shadow: 0 1px 4px rgba(0,0,0,.07); max-width: 1100px; margin: 0 auto; }
+        .header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; }
+        .header-left { flex: 1; }
+        .header-left h2 { font-size: 28px; font-weight: 700; color: #181A24; margin-bottom: 16px; }
+        .metric-box { display: flex; flex-direction: column; gap: 4px; }
+        .metric-value { font-size: 36px; font-weight: 700; color: #FF5F2D; }
+        .metric-label { font-size: 12px; color: #6B7280; }
+        .header-right { background: #F9F8F6; padding: 16px; border-radius: 8px; text-align: right; }
+        .header-right-title { font-size: 14px; font-weight: 600; color: #FF5F2D; margin-bottom: 4px; }
+        .header-right-text { font-size: 11px; color: #6B7280; line-height: 1.6; }
+        .chart-wrapper { width: 100%; margin-bottom: 30px; }
+        .bar-chart { display: flex; flex-direction: column; gap: 12px; }
+        .bar-row { display: flex; align-items: center; gap: 12px; }
+        .bar-label { width: 80px; font-size: 11px; font-weight: 600; color: #181A24; text-align: right; }
+        .bar-container { flex: 1; height: 40px; background: #E5E7EB; border-radius: 4px; position: relative; display: flex; align-items: center; }
+        .bar-fill { height: 100%; background: linear-gradient(90deg, #7C79F5 0%, #4442E3 100%); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: white; font-size: 11px; font-weight: 700; }
+        .bar-value { margin-left: 12px; font-size: 11px; font-weight: 600; color: #4442E3; min-width: 60px; }
+        .total-row { background: #FF5F2D; color: white; padding: 16px 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-top: 16px; font-weight: 700; font-size: 14px; }
+        .data-section { background: #F9F8F6; padding: 20px; border-radius: 8px; margin-top: 20px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .data-label { font-size: 11px; color: #6B7280; font-weight: 600; }
+        .toggle-btn { background: none; border: none; cursor: pointer; font-size: 18px; color: #4442E3; font-weight: bold; }
+        .toggle-btn:hover { color: #3333c0; }
+        .data-content { transition: all 0.3s ease; }
+        .data-content.hidden { display: none; }
+        .data-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+        .data-table th { background: #E5E7EB; padding: 8px; text-align: left; font-size: 9px; font-weight: 600; color: #181A24; border: 1px solid #D1D5DB; }
+        .data-table td { padding: 8px; border: 1px solid #D1D5DB; font-size: 10px; }
+        .data-table input { width: 100%; padding: 5px; border: 1px solid #E5E7EB; border-radius: 3px; font-size: 10px; }
+        .button-group { display: flex; gap: 10px; margin-top: 16px; }
+        button { padding: 8px 16px; background: #4442E3; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; }
+        button:hover { background: #3333c0; }
+        .reset-btn { background: #6B7280; }
+        .reset-btn:hover { background: #535353; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-top">
+            <div class="header-left">
+                <h2>CPT — Client Gain</h2>
+                <div class="metric-box">
+                    <div class="metric-value" id="totalMetric">$30.39M</div>
+                    <div class="metric-label">Total CPT Client Gain · Q1'26</div>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="header-right-title">T&M · Q1 2026</div>
+                <div class="header-right-text">T&M base: $350M<br>by survey efficiency range</div>
+            </div>
+        </div>
+
+        <div class="chart-wrapper">
+            <div class="bar-chart" id="barChart"></div>
+            <div class="total-row">
+                <span>Total</span>
+                <span id="totalValue">$30.39M</span>
+            </div>
+        </div>
+
+        <div class="data-section">
+            <div class="section-header">
+                <div class="data-label">EDIT SOURCE DATA</div>
+                <button class="toggle-btn" onclick="toggleDataSection()">−</button>
+            </div>
+
+            <div class="data-content" id="dataContent">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Efficiency Range</th>
+                            <th>Client Gain ($M)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataInputContainer"></tbody>
+                </table>
+
+                <div class="button-group">
+                    <button onclick="updateChart()">Update Chart</button>
+                    <button class="reset-btn" onclick="resetToDefault()">Reset to Default</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const defaultData = {
+            '<1%': 1.02,
+            '1–5%': 3.12,
+            '6–10%': 5.31,
+            '11–15%': 8.59,
+            '16–20%': 8.01,
+            '20%+': 4.34
+        };
+
+        const baseAmount = 350; // T&M base
+        const ranges = Object.keys(defaultData);
+
+        function initializeInputs() {
+            const container = document.getElementById('dataInputContainer');
+            container.innerHTML = '';
+            ranges.forEach(range => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${range}</strong></td>
+                    <td><input type="number" id="${range}" value="${defaultData[range]}" step="0.01" min="0"></td>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function updateChart() {
+            const chartContainer = document.getElementById('barChart');
+            chartContainer.innerHTML = '';
+
+            const data = {};
+            ranges.forEach(range => {
+                data[range] = parseFloat(document.getElementById(range).value) || 0;
+            });
+
+            // Calculate total
+            const total = Object.values(data).reduce((a, b) => a + b, 0);
+            document.getElementById('totalMetric').textContent = '$' + total.toFixed(2) + 'M';
+            document.getElementById('totalValue').textContent = '$' + total.toFixed(2) + 'M';
+
+            // Create bars - proportional to total gain
+            ranges.forEach(range => {
+                const value = data[range];
+                const percentage = (value / total) * 100;
+
+                const barRow = document.createElement('div');
+                barRow.className = 'bar-row';
+
+                const label = document.createElement('div');
+                label.className = 'bar-label';
+                label.textContent = range;
+
+                const container = document.createElement('div');
+                container.className = 'bar-container';
+
+                const fill = document.createElement('div');
+                fill.className = 'bar-fill';
+                fill.style.width = percentage + '%';
+                fill.textContent = '$' + value.toFixed(2) + 'M';
+
+                container.appendChild(fill);
+
+                const valueLabel = document.createElement('div');
+                valueLabel.className = 'bar-value';
+                valueLabel.textContent = '$' + value.toFixed(2) + 'M';
+
+                barRow.appendChild(label);
+                barRow.appendChild(container);
+                barRow.appendChild(valueLabel);
+                chartContainer.appendChild(barRow);
+            });
+        }
+
+        function resetToDefault() {
+            ranges.forEach(range => {
+                const input = document.getElementById(range);
+                if (input) input.value = defaultData[range];
+            });
+            updateChart();
+        }
+
+        function toggleDataSection() {
+            const content = document.getElementById('dataContent');
+            const btn = document.querySelector('.toggle-btn');
+            content.classList.toggle('hidden');
+            btn.textContent = content.classList.contains('hidden') ? '+' : '−';
+        }
+
+        window.addEventListener('load', () => {
+            initializeInputs();
+            updateChart();
+        });
+    </script>
+</body>
+</html>
