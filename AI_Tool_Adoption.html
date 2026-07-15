@@ -71,11 +71,28 @@
             max-height: 500px;
             overflow-y: auto;
         }
-        .data-label {
-            font-size: 11px;
-            color: #6B7280;
-            margin-bottom: 12px;
-            font-weight: 600;
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .toggle-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            color: #4442E3;
+            font-weight: bold;
+        }
+        .toggle-btn:hover {
+            color: #3333c0;
+        }
+        .data-content {
+            transition: all 0.3s ease;
+        }
+        .data-content.hidden {
+            display: none;
         }
         .data-table {
             width: 100%;
@@ -142,23 +159,28 @@
 
         <!-- Dynamic Data Controls -->
         <div class="data-section">
-            <div class="data-label">EDIT SOURCE DATA BY QUARTER</div>
+            <div class="section-header">
+                <div class="data-label">EDIT SOURCE DATA BY QUARTER</div>
+                <button class="toggle-btn" onclick="toggleDataSection()">+</button>
+            </div>
             
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Tool</th>
-                        <th>FY25-Q3 (%)</th>
-                        <th>FY25-Q4 (%)</th>
-                        <th>FY26-Q1 (%)</th>
-                    </tr>
-                </thead>
-                <tbody id="dataInputContainer"></tbody>
-            </table>
+            <div class="data-content hidden" id="dataContent">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Tool</th>
+                            <th>FY25-Q3 (%)</th>
+                            <th>FY25-Q4 (%)</th>
+                            <th>FY26-Q1 (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataInputContainer"></tbody>
+                </table>
 
-            <div class="button-group">
-                <button onclick="updateChart()">Update Chart</button>
-                <button class="reset-btn" onclick="resetToDefault()">Reset to Default</button>
+                <div class="button-group">
+                    <button onclick="updateChart()">Update Chart</button>
+                    <button class="reset-btn" onclick="resetToDefault()">Reset to Default</button>
+                </div>
             </div>
         </div>
     </div>
@@ -360,6 +382,13 @@
                 });
             });
             updateChart();
+        }
+
+        function toggleDataSection() {
+            const content = document.getElementById('dataContent');
+            const btn = document.querySelector('.toggle-btn');
+            content.classList.toggle('hidden');
+            btn.textContent = content.classList.contains('hidden') ? '+' : '−';
         }
 
         // Initialize on page load
